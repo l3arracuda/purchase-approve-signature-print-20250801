@@ -102,10 +102,10 @@ A comprehensive Laravel-based Purchase Order (PO) Approval System with digital s
 5. **Run migrations**
    ```bash
    php artisan migrate
-   php artisan db:seed
    ```
 
 6. **Create storage directories**
+   เอาภาพจาก Storage เดิม ย้ายไปใส่ Storage ใหม่
    ```bash
    php artisan storage:link
    mkdir -p storage/app/public/signatures
