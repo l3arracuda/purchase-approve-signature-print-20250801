@@ -52,6 +52,11 @@
                                                      alt="{{ $activeSignature->signature_name }}" 
                                                      class="img-thumbnail bg-white"
                                                      style="max-height: 120px; max-width: 200px;">
+                                            @elseif($activeSignature->signature_data)
+                                                <img src="{{ $activeSignature->signature_data }}" 
+                                                     alt="{{ $activeSignature->signature_name }}" 
+                                                     class="img-thumbnail bg-white"
+                                                     style="max-height: 120px; max-width: 200px;">
                                             @else
                                                 <div class="bg-light border rounded p-3">
                                                     <i class="fas fa-image fa-2x text-muted"></i>
@@ -123,6 +128,11 @@
                                                 <td>
                                                     @if($signature->signature_url)
                                                         <img src="{{ $signature->signature_url }}" 
+                                                             alt="{{ $signature->signature_name }}" 
+                                                             class="img-thumbnail"
+                                                             style="max-height: 40px; max-width: 80px;">
+                                                    @elseif($signature->signature_data)
+                                                        <img src="{{ $signature->signature_data }}" 
                                                              alt="{{ $signature->signature_name }}" 
                                                              class="img-thumbnail"
                                                              style="max-height: 40px; max-width: 80px;">

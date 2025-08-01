@@ -27,6 +27,9 @@ return new class extends Migration
             $table->index('approval_method');
         });
 
+        // ลบ View เก่าก่อน (ถ้ามี)
+        DB::connection('modern')->statement("DROP VIEW IF EXISTS v_po_approval_status");
+
         // สร้าง View สำหรับ PO Approval Status
         DB::connection('modern')->statement("
             CREATE VIEW v_po_approval_status AS

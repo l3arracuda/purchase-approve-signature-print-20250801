@@ -6,7 +6,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SignatureController;
 
 Route::get('/', function () {
-    return redirect('/dashboard');
+    return redirect('/login');
 });
 
 Auth::routes(['register' => false]); // ปิดการ register

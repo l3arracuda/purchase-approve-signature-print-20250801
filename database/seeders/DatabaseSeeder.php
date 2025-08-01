@@ -10,6 +10,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
+            // UserSignatureSeeder::class, // Disabled - using real files instead
+            PoApprovalSeeder::class,
+            PoPrintSeeder::class,
         ]);
     }
 }

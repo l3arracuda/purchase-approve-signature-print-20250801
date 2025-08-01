@@ -9,7 +9,7 @@ git init
 
 echo.
 echo Step 2: Add GitHub Remote
-git remote add origin https://github.com/l3arracuda/Romar_purchase_Approval.git
+git remote add origin https://github.com/l3arracuda/purchase-approve-signature-print-20250801.git
 
 echo.
 echo Step 3: Create .gitignore file
@@ -32,6 +32,6 @@ git push -u origin main
 echo.
 echo ========================================
 echo Upload completed!
-echo Repository URL: https://github.com/l3arracuda/Romar_purchase_Approval.git
+echo Repository URL: https://github.com/l3arracuda/purchase-approve-signature-print-20250801.git
 echo ========================================
 pause

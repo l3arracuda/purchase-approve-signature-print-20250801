@@ -618,22 +618,3 @@
 </style>
 @endsection
 
-@section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const approvalForm = document.getElementById('approvalForm');
-    if (approvalForm) {
-        approvalForm.addEventListener('submit', function(e) {
-            const action = e.submitter.value;
-            const message = action === 'approve' 
-                ? 'Are you sure you want to APPROVE this Purchase Order?' 
-                : 'Are you sure you want to REJECT this Purchase Order?';
-            
-            if (!confirm(message)) {
-                e.preventDefault();
-            }
-        });
-    }
-});
-</script>
-@endsection

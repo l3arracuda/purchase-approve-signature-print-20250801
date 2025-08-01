@@ -15,9 +15,8 @@ return new class extends Migration
         Schema::connection('modern')->create('user_signatures', function (Blueprint $table) {
             $table->id(); // จะเป็น BIGINT IDENTITY หรือ INT IDENTITY ตาม Laravel version
             
-            // ถ้า users.id เป็น INT ให้ใช้ unsignedInteger
-            // ถ้า users.id เป็น BIGINT ให้ใช้ unsignedBigInteger
-            $table->unsignedInteger('user_id'); // หรือ unsignedBigInteger('user_id')
+            // ใช้ unsignedBigInteger เพราะ users.id เป็น BIGINT จาก $table->id()
+            $table->unsignedBigInteger('user_id');
             
             $table->string('signature_name', 100);
             $table->string('signature_path', 255)->nullable();
