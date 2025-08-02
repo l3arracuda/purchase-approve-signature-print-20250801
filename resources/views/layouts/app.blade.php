@@ -40,10 +40,31 @@
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('po.*') ? 'active' : '' }}" href="{{ route('po.index') }}">
-                                    <i class="fas fa-file-invoice"></i> Purchase Orders
-                                </a>
+                            <li class="nav-item dropdown"> 
+                                <a class="nav-link dropdown-toggle {{ request()->routeIs('po.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> 
+                                    <i class="fas fa-file-invoice"></i> Purchase Orders 
+                                </a> 
+                                <ul class="dropdown-menu"> 
+                                    <li> 
+                                        <a class="dropdown-item {{ request()->routeIs('po.index') ? 'active' : '' }}" href="{{ route('po.index') }}"> 
+                                            <i class="fas fa-list"></i> All Purchase Orders 
+                                        </a> 
+                                    </li> 
+                                    @if(Auth::user()->approval_level >= 2) 
+                                        <li> 
+                                            <a class="dropdown-item {{ request()->routeIs('po.approved') ? 'active' : '' }}" href="{{ route('po.approved') }}"> 
+                                                <i class="fas fa-check-circle text-success"></i> Approved POs 
+                                                <span class="badge bg-success ms-1">New</span> 
+                                            </a> 
+                                        </li> 
+                                    @endif 
+                                    <li><hr class="dropdown-divider"></li> 
+                                    <li> 
+                                        <a class="dropdown-item" href="#" onclick="alert('Coming Soon!')"> 
+                                            <i class="fas fa-chart-bar"></i> PO Reports 
+                                        </a> 
+                                    </li> 
+                                </ul> 
                             </li>
                             
                             {{-- ========== NEW: Signature Management Link ========== --}}
@@ -138,7 +159,11 @@
         </main>
     </div>
 
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
     {{-- Custom Scripts Section --}}
     @yield('scripts')
+    @stack('scripts')
 </body>
 </html>

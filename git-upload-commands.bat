@@ -31,7 +31,31 @@ git push -u origin main
 
 echo.
 echo ========================================
+echo ADDITIONAL GIT COMMANDS
+echo ========================================
+echo.
+
+echo Step 7: Check current status
+git status
+
+echo.
+echo Step 8: Add changes to staging
+git add .
+
+echo.
+echo Step 9: Commit changes to current branch
+set /p commit_message="Enter commit message: "
+git commit -m "%commit_message%"
+
+echo.
+echo Step 10: Push to current branch
+git push origin HEAD
+
+echo.
+echo ========================================
 echo Upload completed!
 echo Repository URL: https://github.com/l3arracuda/purchase-approve-signature-print-20250801.git
+echo Current Branch: 
+git branch --show-current
 echo ========================================
 pause

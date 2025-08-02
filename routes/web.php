@@ -23,8 +23,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/po/{docNo}', [PurchaseOrderController::class, 'show'])->name('po.show');
     Route::post('/po/{docNo}/approve', [PurchaseOrderController::class, 'approve'])->name('po.approve');
     Route::post('/po/bulk-approve', [PurchaseOrderController::class, 'bulkApprove'])->name('po.bulk-approve');
+    Route::post('/po/bulk-action', [PurchaseOrderController::class, 'bulkAction'])->name('po.bulk-action');
     
-    // ========== NEW: Digital Signature Routes ==========
+    // ========== PO Approved Routes ==========
+    Route::get('/po-approved', [PurchaseOrderController::class, 'approved'])->name('po.approved');
+    
+    // ========== API Routes for PO Approved ==========
+    Route::prefix('api/po-approved')->group(function () {
+        Route::get('/list', [App\Http\Controllers\Api\PoApprovedController::class, 'getApprovedPOs'])->name('api.po-approved.list');
+        Route::get('/stats', [App\Http\Controllers\Api\PoApprovedController::class, 'getStats'])->name('api.po-approved.stats');
+        Route::get('/export/csv', [App\Http\Controllers\Api\PoApprovedController::class, 'exportCSV'])->name('api.po-approved.export-csv');
+        Route::get('/export/excel', [App\Http\Controllers\Api\PoApprovedController::class, 'exportExcel'])->name('api.po-approved.export-excel');
+        Route::get('/data-status', [App\Http\Controllers\Api\PoApprovedController::class, 'getDataStatus'])->name('api.po-approved.data-status');
+        Route::get('/detail/{docNo}', [App\Http\Controllers\Api\PoApprovedController::class, 'getPODetail'])->name('api.po-approved.detail');
+        Route::post('/update-customer-data', [App\Http\Controllers\Api\PoApprovedController::class, 'updateCustomerData'])->name('api.po-approved.update-customer-data');
+    });
+    
+    // ========== Digital Signature Routes ==========
     // Signature Management Pages
     Route::get('/signature/manage', [SignatureController::class, 'manage'])->name('signature.manage');
     
@@ -38,7 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/signature/active', [SignatureController::class, 'getActiveSignature'])->name('api.signature.active');
     Route::get('/api/signature/check', [SignatureController::class, 'hasActiveSignature'])->name('api.signature.check');
     
-    // ========== UPDATED: HTML Print Routes (แทน PDF) ==========
+    // ========== HTML Print Routes ==========
     // Print PO (HTML page)
     Route::get('/po/{docNo}/print', [PurchaseOrderController::class, 'printPO'])->name('po.print');
     

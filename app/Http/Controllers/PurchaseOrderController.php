@@ -169,7 +169,7 @@ class PurchaseOrderController extends Controller
             $user = Auth::user();
             
             // ตรวจสอบสิทธิ์
-            if (!$user->isAdmin() && !$user->isManager() && !$user->isGM()) {
+            if (!$user->isAdmin() && !$user->isManager() && !$user->isGM() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'
@@ -238,7 +238,7 @@ class PurchaseOrderController extends Controller
             $user = Auth::user();
             
             // ตรวจสอบสิทธิ์
-            if (!$user->isAdmin() && !$user->isManager()) {
+            if (!$user->isAdmin() && !$user->isManager() && !$user->isGM() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์ในการ export ข้อมูล'
@@ -489,6 +489,214 @@ class PurchaseOrderController extends Controller
     }
 
     /**
+     * ========== NEW: PO Approved Page ==========
+     * หน้าแสดงรายการ PO ที่ได้รับการอนุมัติแล้ว
+     */
+    public function approved(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            // ตรวจสอบสิทธิ์ - เฉพาะ Manager ขึ้นไป
+            if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
+                return redirect()->route('dashboard')->withErrors(['error' => 'ไม่มีสิทธิ์เข้าถึงหน้านี้']);
+            }
+            
+            // Filters
+            $filters = [
+                'docno' => $request->get('docno'),
+                'customer' => $request->get('customer'),
+                'amount_from' => $request->get('amount_from'),
+                'amount_to' => $request->get('amount_to'),
+                'approval_level' => $request->get('approval_level'),
+            ];
+            
+            // Pagination
+            $page = $request->get('page', 1);
+            $limit = 20;
+            $offset = ($page - 1) * $limit;
+            
+            // เตรียม WHERE conditions
+            $whereConditions = "1 = 1";
+            $havingConditions = "1 = 1";
+            $params = [];
+            $havingParams = [];
+            
+            if (!empty($filters['docno'])) {
+                $whereConditions .= " AND pa.po_docno LIKE ?";
+                $params[] = '%' . $filters['docno'] . '%';
+            }
+            
+            if (!empty($filters['customer'])) {
+                $whereConditions .= " AND pa.customer_name LIKE ?";
+                $params[] = '%' . $filters['customer'] . '%';
+            }
+            
+            if (!empty($filters['amount_from'])) {
+                $whereConditions .= " AND pa.po_amount >= ?";
+                $params[] = floatval($filters['amount_from']);
+            }
+            
+            if (!empty($filters['amount_to'])) {
+                $whereConditions .= " AND pa.po_amount <= ?";
+                $params[] = floatval($filters['amount_to']);
+            }
+            
+            if (!empty($filters['approval_level'])) {
+                $havingConditions .= " AND MAX(pa.approval_level) = ?";
+                $havingParams[] = intval($filters['approval_level']);
+            }
+            
+                        // Main Query - ดึงข้อมูล PO ที่อนุมัติแล้วพร้อมข้อมูลเพิ่มเติม
+            $query = "
+                WITH ApprovedPOs AS (
+                    SELECT 
+                        pa.po_docno,
+                        MAX(pa.po_amount) as po_amount,
+                        MAX(pa.approval_level) as max_approval_level,
+                        MAX(pa.approval_date) as last_approval_date,
+                        MAX(pa.customer_name) as customer_name,
+                        MAX(pa.item_count) as item_count,
+                        COUNT(*) as approval_count,
+                        ROW_NUMBER() OVER (ORDER BY MAX(pa.approval_date) DESC, pa.po_docno DESC) as RowNum
+                    FROM [Romar128].[dbo].[po_approvals] pa
+                    WHERE pa.po_docno LIKE 'PP%' 
+                        AND pa.approval_status = 'approved'
+                        AND ({$whereConditions})
+                    GROUP BY pa.po_docno
+                    HAVING {$havingConditions}
+                )
+                SELECT 
+                    po_docno, po_amount, max_approval_level, 
+                    last_approval_date, customer_name, item_count, approval_count
+                FROM ApprovedPOs 
+                WHERE RowNum BETWEEN ? AND ?
+                ORDER BY last_approval_date DESC
+            ";
+            
+            // Count Query - ต้องใช้ subquery เพื่อ count หลังจาก GROUP BY
+            $countQuery = "
+                SELECT COUNT(*) as total
+                FROM (
+                    SELECT pa.po_docno
+                    FROM [Romar128].[dbo].[po_approvals] pa
+                    WHERE pa.po_docno LIKE 'PP%' 
+                        AND pa.approval_status = 'approved'
+                        AND ({$whereConditions})
+                    GROUP BY pa.po_docno
+                    HAVING {$havingConditions}
+                ) as counted
+            ";
+            
+            // Execute Queries
+            $countParams = array_merge($params, $havingParams);
+            $totalResult = DB::connection('modern')->select($countQuery, $countParams);
+            $totalRecords = $totalResult[0]->total ?? 0;
+            $totalPages = ceil($totalRecords / $limit);
+            
+            // Execute Main Query
+            $queryParams = array_merge($params, $havingParams, [$offset + 1, $offset + $limit]);
+            $approvedPOs = DB::connection('modern')->select($query, $queryParams);
+            
+            // เพิ่มข้อมูลสถานะ
+            foreach ($approvedPOs as $po) {
+                // ข้อมูลมาจากตารางแล้ว ไม่ต้องเพิ่ม default
+                // $po->customer_name = 'N/A'; // มาจากตารางแล้ว
+                // $po->item_count = 0; // มาจากตารางแล้ว
+                
+                // ถ้าไม่มีข้อมูล ให้ใส่ default
+                if (empty($po->customer_name)) {
+                    $po->customer_name = 'N/A';
+                }
+                if (empty($po->item_count)) {
+                    $po->item_count = 0;
+                }
+                
+                // กำหนดสถานะตาม approval level
+                if ($po->max_approval_level >= 3) {
+                    $po->status_label = 'Fully Approved';
+                    $po->status_class = 'success';
+                } elseif ($po->max_approval_level >= 2) {
+                    $po->status_label = 'Manager Approved';
+                    $po->status_class = 'warning';
+                } else {
+                    $po->status_label = 'User Approved';
+                    $po->status_class = 'info';
+                }
+                
+                // คำนวณ Progress Percentage
+                $po->progress_percentage = ($po->max_approval_level / 3) * 100;
+            }
+            
+            // Pagination Object
+            $pagination = (object)[
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total' => $totalRecords,
+                'total_pages' => $totalPages,
+                'has_more' => $page < $totalPages,
+                'has_previous' => $page > 1,
+                'next_page' => $page < $totalPages ? $page + 1 : null,
+                'previous_page' => $page > 1 ? $page - 1 : null,
+            ];
+            
+            \Log::info('PO Approved Page Accessed:', [
+                'user_id' => $user->id,
+                'filters' => array_filter($filters),
+                'total_records' => $totalRecords,
+                'current_page' => $page
+            ]);
+            
+            return view('po.approved', compact('approvedPOs', 'filters', 'pagination'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in PO Approved: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * ========== HELPER METHOD: ดึงข้อมูล Customer และ Item Count ==========
+     */
+    private function getCustomerAndItemCount($docNo)
+    {
+        try {
+            // ดึงข้อมูลจาก Legacy Database
+            $query = "
+                SELECT 
+                    s.SUPNAM as customer_name,
+                    COUNT(d.PDTCD) as item_count
+                FROM [Romar1].[dbo].[POC_POH] h
+                JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
+                JOIN [Romar1].[dbo].[POC_POD] d ON h.DOCNO = d.DOCNO
+                WHERE h.DOCNO = ?
+                GROUP BY s.SUPNAM
+            ";
+            
+            $result = DB::connection('legacy')->select($query, [$docNo]);
+            
+            if (!empty($result)) {
+                return [
+                    'customer_name' => $result[0]->customer_name,
+                    'item_count' => $result[0]->item_count
+                ];
+            }
+            
+            return [
+                'customer_name' => null,
+                'item_count' => 0
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error getting customer and item count: ' . $e->getMessage());
+            return [
+                'customer_name' => null,
+                'item_count' => 0
+            ];
+        }
+    }
+
+    /**
      * Bulk Approval Method (แก้ไขแล้ว)
      */
     public function bulkApprove(Request $request)
@@ -545,6 +753,9 @@ class PurchaseOrderController extends Controller
                         $po = $this->poService->getPurchaseOrderByDocNo($docNo);
                         $poAmount = $po ? $po->header->NetAmount : 0;
                         
+                        // ========== NEW: ดึงข้อมูล Customer และ Item Count ==========
+                        $extraData = $this->getCustomerAndItemCount($docNo);
+                        
                         // บันทึก Approval Record
                         DB::connection('modern')->table('po_approvals')->insert([
                             'po_docno' => $docNo,
@@ -554,6 +765,9 @@ class PurchaseOrderController extends Controller
                             'approval_date' => now(),
                             'approval_note' => $request->bulk_note,
                             'po_amount' => $poAmount,
+                            // ========== NEW: เพิ่มคอลัมน์ใหม่ ==========
+                            'customer_name' => $extraData['customer_name'],
+                            'item_count' => $extraData['item_count'],
                             'approval_method' => 'bulk',
                             'bulk_approval_batch_id' => $batchId,
                             'created_at' => now(),
@@ -567,7 +781,9 @@ class PurchaseOrderController extends Controller
                             'po_docno' => $docNo,
                             'approver_id' => $user->id,
                             'approval_level' => $canApprove['next_level'],
-                            'batch_id' => $batchId
+                            'batch_id' => $batchId,
+                            'customer_name' => $extraData['customer_name'],
+                            'item_count' => $extraData['item_count']
                         ]);
                         
                     } else {
@@ -656,6 +872,162 @@ class PurchaseOrderController extends Controller
     }
 
     /**
+     * Bulk Action Method (สำหรับหน้า PO-Approved)
+     */
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'po_docnos' => 'required|array|min:1',
+            'po_docnos.*' => 'required|string',
+            'action' => 'required|in:approve,reject',
+            'notes' => 'nullable|string|max:500',
+        ], [
+            'po_docnos.required' => 'กรุณาเลือกรายการที่ต้องการดำเนินการ',
+            'po_docnos.array' => 'รูปแบบการเลือกรายการไม่ถูกต้อง',
+            'po_docnos.min' => 'กรุณาเลือกอย่างน้อย 1 รายการ',
+            'action.required' => 'กรุณาเลือกการดำเนินการ',
+            'action.in' => 'การดำเนินการไม่ถูกต้อง',
+        ]);
+
+        try {
+            $user = Auth::user();
+            
+            // ตรวจสอบว่ามี Digital Signature หรือไม่
+            if (!$user->hasActiveSignature()) {
+                return back()->withErrors(['error' => 'คุณต้องอัปโหลด Digital Signature ก่อนที่จะสามารถอนุมัติ PO ได้']);
+            }
+            
+            $poDocnos = $request->po_docnos;
+            $action = $request->action;
+            $notes = $request->notes;
+            
+            \Log::info('Bulk Action Started (PO-Approved)', [
+                'user_id' => $user->id,
+                'po_count' => count($poDocnos),
+                'action' => $action,
+                'po_docnos' => $poDocnos
+            ]);
+            
+            DB::connection('modern')->beginTransaction();
+            
+            $results = [];
+            $successCount = 0;
+            $batchId = 'BULK_ACTION_' . date('YmdHis') . '_' . $user->id;
+            
+            foreach ($poDocnos as $docNo) {
+                try {
+                    // ตรวจสอบสิทธิ์การ Approve สำหรับแต่ละ PO
+                    $canApprove = $this->poService->canApprove($docNo, $user->id);
+                    
+                    if ($canApprove['can_approve']) {
+                        // ดึงข้อมูล PO เพื่อเอา Amount
+                        $po = $this->poService->getPurchaseOrderByDocNo($docNo);
+                        $poAmount = $po ? $po->header->NetAmount : 0;
+                        
+                        // ดึงข้อมูล Customer และ Item Count
+                        $extraData = $this->getCustomerAndItemCount($docNo);
+                        
+                        // บันทึก Approval Record
+                        DB::connection('modern')->table('po_approvals')->insert([
+                            'po_docno' => $docNo,
+                            'approver_id' => $user->id,
+                            'approval_level' => $canApprove['next_level'],
+                            'approval_status' => $action === 'approve' ? 'approved' : 'rejected',
+                            'approval_date' => now(),
+                            'approval_note' => $notes,
+                            'po_amount' => $poAmount,
+                            'customer_name' => $extraData['customer_name'],
+                            'item_count' => $extraData['item_count'],
+                            'approval_method' => 'bulk_action',
+                            'bulk_approval_batch_id' => $batchId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        $results[$docNo] = 'success';
+                        $successCount++;
+                        
+                        \Log::info('PO processed in bulk action', [
+                            'po_docno' => $docNo,
+                            'approver_id' => $user->id,
+                            'approval_level' => $canApprove['next_level'],
+                            'action' => $action,
+                            'batch_id' => $batchId
+                        ]);
+                        
+                    } else {
+                        $results[$docNo] = $canApprove['reason'];
+                        \Log::warning('PO cannot be processed in bulk action', [
+                            'po_docno' => $docNo,
+                            'reason' => $canApprove['reason']
+                        ]);
+                    }
+                    
+                } catch (\Exception $e) {
+                    $results[$docNo] = 'Error: ' . $e->getMessage();
+                    \Log::error('Error processing PO in bulk action', [
+                        'po_docno' => $docNo,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+            
+            DB::connection('modern')->commit();
+            
+            // ส่ง Notification (ถ้ามี NotificationService)
+            try {
+                if (class_exists('App\Services\NotificationService')) {
+                    $notificationService = new \App\Services\NotificationService();
+                    
+                    if ($action === 'approve') {
+                        // ส่ง notification สำหรับ bulk approval (เฉพาะที่สำเร็จ)
+                        foreach (array_keys(array_filter($results, fn($r) => $r === 'success')) as $docNo) {
+                            try {
+                                $canApprove = $this->poService->canApprove($docNo, $user->id);
+                                $notificationService->sendApprovalNotification($docNo, $user, $canApprove['next_level'] ?? 1);
+                            } catch (\Exception $e) {
+                                \Log::warning('Failed to send notification for PO: ' . $docNo);
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error sending bulk action notifications: ' . $e->getMessage());
+            }
+            
+            // สร้าง message ตอบกลับ
+            $actionText = $action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
+            $message = "ดำเนินการ{$actionText}จำนวน {$successCount} รายการ สำเร็จแล้ว";
+            
+            if ($successCount < count($poDocnos)) {
+                $failedCount = count($poDocnos) - $successCount;
+                $message .= " (มี {$failedCount} รายการที่ไม่สามารถดำเนินการได้)";
+            }
+            
+            \Log::info('Bulk Action Completed', [
+                'user_id' => $user->id,
+                'batch_id' => $batchId,
+                'total_pos' => count($poDocnos),
+                'successful' => $successCount,
+                'failed' => count($poDocnos) - $successCount,
+                'action' => $action
+            ]);
+            
+            return back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            DB::connection('modern')->rollBack();
+            \Log::error('Bulk Action Error: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+                'po_docnos' => $request->po_docnos ?? [],
+                'action' => $request->action ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในการดำเนินการ: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Upload Digital Signature
      */
     public function uploadSignature(Request $request)
@@ -682,7 +1054,7 @@ class PurchaseOrderController extends Controller
     }
     
     /**
-     * ประมวลผล Approval (Approve/Reject) - Method ใหม่
+     * ประมวลผล Approval (Approve/Reject) - Method ใหม่ (อัปเดต)
      */
     public function approve(Request $request, $docNo)
     {
@@ -715,6 +1087,9 @@ class PurchaseOrderController extends Controller
             $action = $request->input('action');
             $note = $request->input('approval_note');
             
+            // ========== NEW: ดึงข้อมูลเพิ่มเติม ==========
+            $extraData = $this->getCustomerAndItemCount($docNo);
+            
             // บันทึก Approval Record - ใช้ user->id
             $approvalId = DB::connection('modern')->table('po_approvals')->insertGetId([
                 'po_docno' => $docNo,
@@ -724,6 +1099,10 @@ class PurchaseOrderController extends Controller
                 'approval_date' => now(),
                 'approval_note' => $note,
                 'po_amount' => $po->header->NetAmount,
+                // ========== NEW: เพิ่มคอลัมน์ใหม่ ==========
+                'customer_name' => $extraData['customer_name'],
+                'item_count' => $extraData['item_count'],
+                'approval_method' => 'single',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -740,6 +1119,15 @@ class PurchaseOrderController extends Controller
             }
             
             DB::connection('modern')->commit();
+            
+            \Log::info('PO Approval/Rejection Completed', [
+                'po_docno' => $docNo,
+                'action' => $action,
+                'approver_id' => $user->id,
+                'approval_level' => $canApprove['next_level'],
+                'customer_name' => $extraData['customer_name'],
+                'item_count' => $extraData['item_count']
+            ]);
             
             return redirect()->route('po.show', $docNo)->with('success', $message);
             
