@@ -22,7 +22,7 @@
                         <div class="col-md-3">
                             <div class="card bg-primary text-white">
                                 <div class="card-body">
-                                    <h5>User Role</h5>
+                                    <h5>ระดับผู้ใช้งาน</h5>
                                     <h2>{{ ucfirst($user->role) }}</h2>
                                     <small>Approval Level: {{ $user->approval_level }}</small>
                                 </div>
@@ -218,7 +218,14 @@
                     <!-- Recent POs Preview -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5>Recent Purchase Orders (PP% only)</h5>
+                            <h5>Recent Purchase Orders (PP% only)
+                            <a href="{{ route('po.approved') }}" class="btn btn-outline-success float-end" style="margin-left: 10px;">
+                                <i class="fas fa-check-circle"></i> Approved POs
+                            </a>
+                            <a href="{{ route('po.index') }}" class="btn btn-outline-primary float-end">
+                                <i class="fas fa-list"></i> View All POs
+                            </a>                            
+                            </h5>
                         </div>
                         <div class="card-body">
                             @if(count($recentPOs) > 0)
