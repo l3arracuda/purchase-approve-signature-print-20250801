@@ -229,9 +229,11 @@
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
                                                 @if(Auth::user()->approval_level >= 1)
-                                                    <a href="{{ route('po.show', $po->DocNo) }}" 
-                                                       class="btn btn-outline-success btn-sm" title="Approve">
-                                                        <i class="fas fa-check"></i> Approve
+                                                    <a href="{{ route('po.print', $po->DocNo) }}" 
+                                                       target="_blank"
+                                                       class="btn btn-outline-success btn-sm" 
+                                                       title="Print PO">
+                                                        <i class="fas fa-print"></i> Print
                                                     </a>
                                                 @endif
                                             </div>
