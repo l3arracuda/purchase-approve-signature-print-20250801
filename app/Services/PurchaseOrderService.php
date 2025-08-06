@@ -99,6 +99,7 @@ class PurchaseOrderService
                     d.QTY as QTY, 
                     d.UNIT as Unit, 
                     d.PRICE as Price,
+                    d.shipdat as ShipDate,
                     (d.QTY * d.PRICE) as LineTotal
                 FROM [Romar1].[dbo].[POC_POD] d
                 JOIN [Romar1].[dbo].[INV_PDT] i ON d.PDTCD = i.PDTCD
@@ -116,6 +117,7 @@ class PurchaseOrderService
                     'QTY' => $item->QTY,
                     'Unit' => $item->Unit,
                     'Price' => $item->Price,
+                    'ShipDate' => $item->ShipDate,
                     'LineTotal' => $item->LineTotal,
                 ];
             });

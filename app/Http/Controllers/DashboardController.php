@@ -117,7 +117,7 @@ class DashboardController extends Controller
                     HAVING MAX(pa.approval_level) = ?
                         AND MAX(pa.approval_level) < 3
                 )
-                SELECT TOP 5 
+                SELECT TOP 10 
                     po_docno,
                     po_amount,
                     customer_name,

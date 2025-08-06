@@ -1,0 +1,5 @@
+            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {

@@ -129,7 +129,7 @@ class PrintService
                 }
 
                 // Format วันที่
-                $approval->formatted_date = Carbon::parse($approval->approval_date)->format('d/m/Y H:i');
+                $approval->formatted_date = Carbon::parse($approval->approval_date)->format('d/m/Y');
                 $approval->thai_date = Carbon::parse($approval->approval_date)->locale('th')->isoFormat('DD MMMM YYYY เวลา HH:mm น.');
 
                 // Level name
@@ -163,7 +163,7 @@ class PrintService
             'email' => 'info@romar.co.th',
             'website' => 'www.romar.co.th',
             'tax_id' => '0-1055-28037-07-6',
-            'logo_path' => $this->getCompanyLogoPath(), // path ไปยังโลโก้ (ถ้ามี)
+            // 'logo_path' => $this->getCompanyLogoPath(), // path ไปยังโลโก้ (ถ้ามี)
         ];
     }
 

@@ -899,6 +899,14 @@ class PurchaseOrderController extends Controller
      */
     public function bulkAction(Request $request)
     {
+        // Debug logging
+        \Log::info('Bulk Action Request Data:', [
+            'all_request_data' => $request->all(),
+            'po_docnos' => $request->input('po_docnos'),
+            'action' => $request->input('action'),
+            'notes' => $request->input('notes'),
+        ]);
+
         $request->validate([
             'po_docnos' => 'required|array|min:1',
             'po_docnos.*' => 'required|string',
@@ -1158,6 +1166,47 @@ class PurchaseOrderController extends Controller
             DB::connection('modern')->rollBack();
             \Log::error('Approval Error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Error processing approval: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * ========== HELPER METHOD: ดึงข้อมูล Customer และ Item Count ==========
+     */
+    private function getCustomerAndItemCount($docNo)
+    {
+        try {
+            // ดึงข้อมูลจาก Legacy Database
+            $query = "
+                SELECT 
+                    s.SUPNAM as customer_name,
+                    COUNT(d.PDTCD) as item_count
+                FROM [Romar1].[dbo].[POC_POH] h
+                JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
+                JOIN [Romar1].[dbo].[POC_POD] d ON h.DOCNO = d.DOCNO
+                WHERE h.DOCNO = ?
+                GROUP BY s.SUPNAM
+            ";
+            
+            $result = DB::connection('legacy')->select($query, [$docNo]);
+            
+            if (!empty($result)) {
+                return [
+                    'customer_name' => $result[0]->customer_name,
+                    'item_count' => $result[0]->item_count
+                ];
+            }
+            
+            return [
+                'customer_name' => null,
+                'item_count' => 0
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error getting customer and item count: ' . $e->getMessage());
+            return [
+                'customer_name' => null,
+                'item_count' => 0
+            ];
         }
     }
 }
