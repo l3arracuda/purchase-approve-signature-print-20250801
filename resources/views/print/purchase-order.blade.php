@@ -106,14 +106,15 @@
         
         /* PO Info Section */
         .po-info-section {
-            margin-bottom: 5px;
+            margin-bottom: 60px;
+            line-height: 1.4;
         }
         
         .po-info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 80% 20%;
             gap: 20px;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         
         .po-info-box-L {
@@ -131,7 +132,6 @@
         }
         
         .info-row {
-            margin-bottom: 8px;
             display: flex;
             align-items: flex-start;
         }
@@ -402,17 +402,17 @@
                         <span class="info-value" style="margin-left: 60px;"><strong>{{ $po->header->SupNo }} : {{ $po->header->SupName }}</strong></span>
                     </div>
                     <div class="info-row">
-                        <span class="info-value">
+                        <span class="info-value" style="margin-left: 20px;">
                             {{ $po->header->AddressSup }}<br>
-                            {{ $po->header->Province }} {{ $po->header->ZipCode }}
+                            <span class="info-value">{{ $po->header->Province }} {{ $po->header->ZipCode }}</span>
                         </span>
                     </div>
                     @if($po->header->ContractSup)
-                    <div class="info-row">
+                    <div class="info-row" style="margin-left: 20px;">
                         <span class="info-value">{{ $po->header->ContractSup }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-value" style="margin-left: 60px;">
+                        <span class="info-value" style="margin-left: 85px; line-height: 1;">
                             @if($po->header->CreditTerm == 0)
                                 เงินสด
                             @else
