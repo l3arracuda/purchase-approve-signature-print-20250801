@@ -41,6 +41,20 @@
                 max-width: none;
                 width: 100%;
             }
+
+            .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 220px;
+            padding: 10px;
+            background: white;
+            }
+
+            .page-break {
+                page-break-after: always;
+            }
         }
         
         .container {
@@ -168,6 +182,10 @@
             text-align: left;
             vertical-align: top;
         }
+
+        .items-table td:nth-child(2) {
+            width: 16%; /* ProductNo column */
+        }
         
         .items-table th {
             font-weight: bold;
@@ -187,21 +205,26 @@
         
         /* Notes Section */
         .notes-section {
-            margin-bottom: 25px;
-            padding: 15px;
+            text-align: left;
         }
         
         .notes-section .note-item {
-            margin-bottom: 8px;
         }
         
         .notes-section .note-label {
             font-weight: bold;
         }
+
+        .note-label-1 {
+            padding-left: 100px;
+        }
+
+        .note-label-2 {
+            padding-left: 10px;
+        }
         
         /* Approval Section */
         .approval-section {
-            margin-top: 5px;
             margin-right: 80px;
             padding: 5px;
         }
@@ -222,11 +245,13 @@
         }
         
         .approval-level {
-            padding: 15px;
             text-align: center;
-            min-height: 200px;
         }        
         
+        .approval-level.pending {
+            text-align: center;
+            align-items: center;
+        }
         .approval-level-title {
             font-weight: bold;
             font-size: 14px;
@@ -235,8 +260,6 @@
         }
         
         .signature-area {
-            height: 80px;
-            margin: 15px 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -452,17 +475,19 @@
             </table>
         </div>        
 
+        <!-- Footer -->
+        <div class="footer">
         @if($po->header->Remember || $po->header->Note)
         <!-- Notes Section -->
         <div class="notes-section">
             @if($po->header->Remember)
                 <div class="note-item">
-                    <span class="note-label"></span> {{ $po->header->Remember }}
+                    <span class="note-label-1"></span> {{ $po->header->Remember }}  {{ $po->header->Note }}
                 </div>
             @endif
-            @if($po->header->Note)
+            @if($po->header->Note1 || $po->header->Note2)
                 <div class="note-item">
-                    <span class="note-label"></span> {{ $po->header->Note }}
+                    <span class="note-label-2"></span> {{ $po->header->Note1 }}  {{ $po->header->Note2 }}
                 </div>
             @endif
         </div>
@@ -499,9 +524,8 @@
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="footer">
-            <div class="footer-row">เอกสารถูกสร้างเมื่อ: {{ $generated_at->format('d/m/Y H:i:s') }} ลายเซ็นดิจิทัลมีผลตามกฎหมาย</div>
+
+            <div class="footer-row" style="text-align: left; padding-left: 10px;">เอกสารถูกสร้างเมื่อ: {{ $generated_at->format('d/m/Y H:i:s') }} ลายเซ็นดิจิทัลมีผลตามกฎหมาย</div>
         </div>
     </div>
 

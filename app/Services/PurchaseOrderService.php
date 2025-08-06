@@ -77,6 +77,8 @@ class PurchaseOrderService
                     h.NETAMT as NetAmount,
                     h.REM as Remember, 
                     h.INTDES as Note,
+                    h.INTDES1 as Note1,
+                    h.INTDES2 as Note2,
                     h.APPSTS as AppStatus
                 FROM [Romar1].[dbo].[POC_POH] h
                 JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
