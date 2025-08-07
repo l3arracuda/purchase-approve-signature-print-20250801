@@ -127,9 +127,9 @@
                                                     <button type="submit" name="action" value="approve" class="btn btn-success">
                                                         <i class="fas fa-check"></i> Bulk Approve (<span id="selectedCount">0</span>)
                                                     </button>
-                                                    <button type="submit" name="action" value="reject" class="btn btn-danger">
+                                                    {{-- <button type="submit" name="action" value="reject" class="btn btn-danger">
                                                         <i class="fas fa-times"></i> Bulk Reject
-                                                    </button>
+                                                    </button> --}}
                                                 </div>
                                             </div>
                                         </div>
@@ -138,7 +138,7 @@
                                     <div class="alert alert-warning mb-0">
                                         <i class="fas fa-exclamation-triangle"></i>
                                         <strong>Digital Signature Required:</strong> 
-                                        You need to <a href="{{ route('signature.manage') }}" class="alert-link">upload a digital signature</a> before you can approve POs.
+                                        คุณต้องอัพโหลดลายเซ็น คลิก>>> <a href="{{ route('signature.manage') }}" class="alert-link">upload a digital signature</a> ก่อนที่คุณจะอนุมัติ PO ได้
                                     </div>
                                 @endif
                             </div>
@@ -150,7 +150,7 @@
                         @if(count($purchaseOrders) > 0)
                             <div class="alert alert-success">
                                 <small>
-                                    <strong>Data Source:</strong> {{ count($purchaseOrders) }} records on this page
+                                    <strong>Data Source 2025 up:</strong> {{ count($purchaseOrders) }} records on this page
                                     @if(isset($pagination))
                                         | <strong>Total:</strong> {{ number_format($pagination->total) }} records
                                         | <strong>Page:</strong> {{ $pagination->current_page }}/{{ $pagination->total_pages }}
@@ -162,8 +162,8 @@
                                     <tr>
                                         {{-- ========== NEW: Checkbox Column ========== --}}
                                         @if(Auth::user()->approval_level >= 1)
-                                        <th width="3%">
-                                            <input type="checkbox" id="selectAll" class="form-check-input" title="Select All">
+                                        <th width="2%">
+                                            <input type="checkbox" id="selectAll" class="form-check-input" title="Select All" style="transform: scale(1.5);">
                                         </th>
                                         @endif
                                         <th>Date</th>
@@ -182,7 +182,7 @@
                                         {{-- ========== NEW: Checkbox ========== --}}
                                         @if(Auth::user()->approval_level >= 1)
                                         <td>
-                                            <input type="checkbox" name="selected_pos[]" value="{{ $po->DocNo }}" class="form-check-input po-checkbox" title="Select this PO">
+                                            <input type="checkbox" name="selected_pos[]" value="{{ $po->DocNo }}" class="form-check-input po-checkbox" title="Select this PO" style="transform: scale(1.5);">
                                         </td>
                                         @endif
                                         <td>{{ date('d/m/Y', strtotime($po->DateNo)) }}</td>
@@ -228,14 +228,12 @@
                                                    class="btn btn-outline-primary btn-sm" title="View Details">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
-                                                @if(Auth::user()->approval_level >= 1)
-                                                    <a href="{{ route('po.print', $po->DocNo) }}" 
-                                                       target="_blank"
-                                                       class="btn btn-outline-success btn-sm" 
-                                                       title="Print PO">
-                                                        <i class="fas fa-print"></i> Print
+                                                {{-- @if(Auth::user()->approval_level >= 1)
+                                                    <a href="{{ route('po.show', $po->DocNo) }}" 
+                                                       class="btn btn-outline-success btn-sm" title="Approve">
+                                                        <i class="fas fa-check"></i> Approve
                                                     </a>
-                                                @endif
+                                                @endif --}}
                                             </div>
                                         </td>
                                     </tr>

@@ -50,25 +50,26 @@
                                             <i class="fas fa-list"></i> All Purchase Orders 
                                         </a> 
                                     </li> 
-                                    @if(Auth::user()->approval_level >= 2) 
+                                    @if(Auth::user()->approval_level >= 1) 
                                         <li> 
                                             <a class="dropdown-item {{ request()->routeIs('po.approved') ? 'active' : '' }}" href="{{ route('po.approved') }}"> 
-                                                <i class="fas fa-check-circle text-success"></i> Approved POs 
-                                                <span class="badge bg-success ms-1">New</span> 
+                                                <i class="fas fa-check-circle text-success"></i> Approved POs
                                             </a> 
                                         </li> 
                                     @endif 
+                                    @if(Auth::user()->isAdmin())
                                     <li><hr class="dropdown-divider"></li> 
                                     <li> 
                                         <a class="dropdown-item" href="#" onclick="alert('Coming Soon!')"> 
                                             <i class="fas fa-chart-bar"></i> PO Reports 
                                         </a> 
                                     </li> 
+                                    @endif
                                 </ul> 
                             </li>
                             
                             {{-- ========== NEW: Signature Management Link ========== --}}
-                            <li class="nav-item">
+                            {{-- <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('signature.*') ? 'active' : '' }}" href="{{ route('signature.manage') }}">
                                     <i class="fas fa-signature"></i> 
                                     Digital Signature
@@ -76,7 +77,7 @@
                                         <span class="badge bg-warning text-dark ms-1">!</span>
                                     @endif
                                 </a>
-                            </li>
+                            </li> --}}
                         @endauth
                     </ul>
 

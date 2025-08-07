@@ -77,6 +77,8 @@ class PurchaseOrderService
                     h.NETAMT as NetAmount,
                     h.REM as Remember, 
                     h.INTDES as Note,
+                    h.INTDES1 as Note1,
+                    h.INTDES2 as Note2,
                     h.APPSTS as AppStatus
                 FROM [Romar1].[dbo].[POC_POH] h
                 JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
@@ -99,6 +101,7 @@ class PurchaseOrderService
                     d.QTY as QTY, 
                     d.UNIT as Unit, 
                     d.PRICE as Price,
+                    d.shipdat as ShipDate,
                     (d.QTY * d.PRICE) as LineTotal
                 FROM [Romar1].[dbo].[POC_POD] d
                 JOIN [Romar1].[dbo].[INV_PDT] i ON d.PDTCD = i.PDTCD
@@ -116,6 +119,7 @@ class PurchaseOrderService
                     'QTY' => $item->QTY,
                     'Unit' => $item->Unit,
                     'Price' => $item->Price,
+                    'ShipDate' => $item->ShipDate,
                     'LineTotal' => $item->LineTotal,
                 ];
             });
