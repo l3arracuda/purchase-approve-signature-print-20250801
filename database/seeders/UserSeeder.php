@@ -10,31 +10,43 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // MD User
+        // user003
         User::firstOrCreate(
-            ['username' => 'md001'],
+            ['username' => 'user003'],
             [
-                'password' => Hash::make('md123'),
-                'full_name' => 'Managing Director',
-                'email' => 'md@company.com',
-                'role' => 'gm',
-                'approval_level' => 3,
+                'password' => Hash::make('user123'),
+                'full_name' => 'Third User',
+                'email' => 'user@company.com',
+                'role' => 'user',
+                'approval_level' => 1,
                 'is_active' => true,
             ]
         );
+        // // MD User
+        // User::firstOrCreate(
+        //     ['username' => 'md001'],
+        //     [
+        //         'password' => Hash::make('md123'),
+        //         'full_name' => 'Managing Director',
+        //         'email' => 'md@company.com',
+        //         'role' => 'gm',
+        //         'approval_level' => 3,
+        //         'is_active' => true,
+        //     ]
+        // );
 
-        // MD User
-        User::firstOrCreate(
-            ['username' => 'md002'],
-            [
-                'password' => Hash::make('md123'),
-                'full_name' => 'Managing Director',
-                'email' => 'md@company.com',
-                'role' => 'gm',
-                'approval_level' => 3,
-                'is_active' => true,
-            ]
-        );
+        // // MD User
+        // User::firstOrCreate(
+        //     ['username' => 'md002'],
+        //     [
+        //         'password' => Hash::make('md123'),
+        //         'full_name' => 'Managing Director',
+        //         'email' => 'md@company.com',
+        //         'role' => 'gm',
+        //         'approval_level' => 3,
+        //         'is_active' => true,
+        //     ]
+        // );
         // // Admin User
         // User::firstOrCreate(
         //     ['username' => 'admin'],
