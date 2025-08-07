@@ -345,7 +345,7 @@ class PurchaseOrderController extends Controller
                     JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
                     JOIN [Romar1].[dbo].[POC_POD] d ON h.DOCNO = d.DOCNO
                     JOIN [Romar1].[dbo].[INV_PDT] i ON d.PDTCD = i.PDTCD
-                    WHERE {$whereConditions}
+                    WHERE {$whereConditions} and h.docdat >= '2025-01-01'
                     GROUP BY h.DOCNO, h.DOCDAT, s.SUPNAM, h.NETAMT, h.APPSTS, h.INTDES, s.SUPCD
                 )
                 SELECT DocNo, DateNo, SupName, NetAmount, AppStatus, Note, SupNo
@@ -360,6 +360,7 @@ class PurchaseOrderController extends Controller
                 JOIN [Romar1].[dbo].[POC_POD] d ON h.DOCNO = d.DOCNO
                 JOIN [Romar1].[dbo].[INV_PDT] i ON d.PDTCD = i.PDTCD
                 WHERE {$whereConditions}
+                AND h.docdat >= '2025-01-01'
             ";
             
             // Execute Queries

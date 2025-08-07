@@ -22,7 +22,7 @@
                         <div class="col-md-3">
                             <div class="card bg-primary text-white">
                                 <div class="card-body">
-                                    <h5>ระดับผู้ใช้งาน</h5>
+                                    <h5>User Role</h5>
                                     <h2>{{ ucfirst($user->role) }}</h2>
                                     <small>Approval Level: {{ $user->approval_level }}</small>
                                 </div>
@@ -50,12 +50,18 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="card bg-warning text-white">
-                                    <div class="card-body">
+                                <div class="card bg-warning text-white card-hover" 
+                                    style="cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease;"
+                                    onclick="window.location.href='{{ route('po.approved') }}?approval_level={{ $pendingApprovals['next_level']-1 }}'">
+                                    <div class="card-body" style="text-align: center;">
                                         <h5>Pending Level {{ $user->approval_level }}</h5>
-                                        <h2>{{ $pendingApprovals['count'] ?? 0 }}</h2>
+                                        @if(($user->isGM()))
+                                        <h2>{{ $approvedStats->manager_approved ?? 0 }}</h2>
+                                        @elseif(($user->isManager()))
+                                        <h2>{{ $approvedStats->user_approved ?? 0 }}</h2>
+                                        @endif
                                         <small>Awaiting Your Approval</small>
-                                    </div>
+                                    </div>                                    
                                 </div>
                             </div>
                         @else
@@ -164,7 +170,7 @@
                                         <h6 class="mb-0">
                                             <i class="fas fa-clock"></i> POs Pending Your Approval (Level {{ $pendingApprovals['next_level'] }})
                                             <a href="{{ route('po.approved') }}?approval_level={{ $pendingApprovals['next_level']-1 }}" class="btn btn-light btn-sm float-end">
-                                                <i class="fas fa-clock"></i> Pending Approvals ({{ $pendingApprovals['count'] }})
+                                                <i class="fas fa-clock"></i> Pending Approvals
                                             </a>
                                         </h6>
                                     </div>
@@ -175,7 +181,7 @@
                                                     <tr>
                                                         <th>PO Number</th>
                                                         <th>Customer</th>
-                                                        <th>Amount</th>
+                                                        <th style="text-align: center;">Amount</th>
                                                         <th>Current Level</th>
                                                         <th>Days Waiting</th>
                                                         <th>Action</th>
@@ -218,13 +224,13 @@
                     <!-- Recent POs Preview -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5>Recent Purchase Orders (PP% only)
-                            <a href="{{ route('po.approved') }}" class="btn btn-outline-success float-end" style="margin-left: 10px;">
+                            <h5>Recent Purchase Orders
+                            <a href="{{ route('po.approved') }}" class="btn btn-outline-success" style="float: right;">
                                 <i class="fas fa-check-circle"></i> Approved POs
                             </a>
-                            <a href="{{ route('po.index') }}" class="btn btn-outline-primary float-end">
-                                <i class="fas fa-list"></i> View All POs
-                            </a>                            
+                            <a href="{{ route('po.index') }}" class="btn btn-outline-primary" style="float: right;">
+                                    <i class="fas fa-list"></i> View All POs
+                                </a>
                             </h5>
                         </div>
                         <div class="card-body">
@@ -350,7 +356,7 @@
                             <div class="card border-info">
                                 <div class="card-header bg-info text-white">
                                     <h6 class="mb-0">
-                                        <i class="fas fa-database"></i> Data Status
+                                        <i class="fas fa-database"></i> Data Status เช็คข้อมูลชื่อลูกค้าและรายการสินค้า
                                         <button type="button" class="btn btn-light btn-sm float-end" id="refreshDataStatusBtn">
                                             <i class="fas fa-refresh"></i> Refresh
                                         </button>
@@ -558,6 +564,16 @@ function updateCustomerData() {
 
 .card-header h6 .float-end {
     font-size: 0.875rem;
+}
+
+.card-hover {
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 768px) {
