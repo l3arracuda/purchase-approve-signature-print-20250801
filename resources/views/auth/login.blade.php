@@ -61,7 +61,7 @@
                     </form>
 
                     <!-- Test Users Information -->
-                    <div class="mt-4">
+                    {{-- <div class="mt-4">
                         <small class="text-muted">
                             Test Users:<br>
                             Admin: admin / admin123<br>
@@ -69,7 +69,7 @@
                             Manager: manager001 / manager123<br>
                             User: user001 / user123
                         </small>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>
