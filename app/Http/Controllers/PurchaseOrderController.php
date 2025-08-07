@@ -491,37 +491,57 @@ class PurchaseOrderController extends Controller
 
     /**
      * ========== NEW: PO Approved Page ==========
-     * หน้าแสดงรายการ PO ที่ได้รับการอนุมัติแล้ว
+    * หน้าแสดงรายการ PO ที่อนุมัติแล้ว (รองรับ Date Range)
      */
     public function approved(Request $request)
     {
         try {
             $user = Auth::user();
             
-            // ตรวจสอบสิทธิ์ - เฉพาะ Manager ขึ้นไป
+            // ✅ FIX: Access Control - เฉพาะ Manager ขึ้นไป
             if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
                 return redirect()->route('dashboard')->withErrors(['error' => 'ไม่มีสิทธิ์เข้าถึงหน้านี้']);
             }
             
-            // Filters
+            // ✅ FIX: Filters with Date Range และ Validation
             $filters = [
                 'docno' => $request->get('docno'),
                 'customer' => $request->get('customer'),
-                'amount_from' => $request->get('amount_from'),
-                'amount_to' => $request->get('amount_to'),
+                'amount_from' => $request->get('amount_from') ? floatval($request->get('amount_from')) : null,
+                'amount_to' => $request->get('amount_to') ? floatval($request->get('amount_to')) : null,
                 'approval_level' => $request->get('approval_level'),
+                'date_from' => $request->get('date_from'),
+                'date_to' => $request->get('date_to'),
             ];
+
+            // ✅ FIX: Date Range Validation
+            if ($filters['date_from'] && $filters['date_to']) {
+                $dateFrom = \Carbon\Carbon::parse($filters['date_from']);
+                $dateTo = \Carbon\Carbon::parse($filters['date_to']);
+                
+                if ($dateFrom > $dateTo) {
+                    return back()->withErrors(['error' => 'วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด']);
+                }
+                
+                // Check if date range is too wide (more than 2 years)
+                if ($dateFrom->diffInDays($dateTo) > 730) {
+                    return back()->withErrors(['error' => 'ช่วงวันที่ไม่ควรเกิน 2 ปี']);
+                }
+            }
+
+            // ✅ FIX: Amount Range Validation
+            if ($filters['amount_from'] && $filters['amount_to'] && $filters['amount_from'] > $filters['amount_to']) {
+                return back()->withErrors(['error' => 'ยอดเงินเริ่มต้นต้องไม่เกินยอดเงินสิ้นสุด']);
+            }
             
             // Pagination
             $page = $request->get('page', 1);
             $limit = 20;
             $offset = ($page - 1) * $limit;
             
-            // เตรียม WHERE conditions
+            // ✅ FIX: WHERE conditions (ไม่รวม approval_level)
             $whereConditions = "1 = 1";
-            $havingConditions = "1 = 1";
             $params = [];
-            $havingParams = [];
             
             if (!empty($filters['docno'])) {
                 $whereConditions .= " AND pa.po_docno LIKE ?";
@@ -535,77 +555,99 @@ class PurchaseOrderController extends Controller
             
             if (!empty($filters['amount_from'])) {
                 $whereConditions .= " AND pa.po_amount >= ?";
-                $params[] = floatval($filters['amount_from']);
+                $params[] = $filters['amount_from'];
             }
             
             if (!empty($filters['amount_to'])) {
                 $whereConditions .= " AND pa.po_amount <= ?";
-                $params[] = floatval($filters['amount_to']);
+                $params[] = $filters['amount_to'];
             }
             
+            // ✅ NEW: Date Range Filters
+            if (!empty($filters['date_from'])) {
+                $whereConditions .= " AND pa.approval_date >= ?";
+                $params[] = $filters['date_from'] . ' 00:00:00';
+            }
+            
+            if (!empty($filters['date_to'])) {
+                $whereConditions .= " AND pa.approval_date <= ?";
+                $params[] = $filters['date_to'] . ' 23:59:59';
+            }
+            
+            // ✅ FIX: HAVING clause for approval_level filter
+            $havingClause = "";
             if (!empty($filters['approval_level'])) {
-                $havingConditions .= " AND MAX(pa.approval_level) = ?";
-                $havingParams[] = intval($filters['approval_level']);
+                $havingClause = "HAVING MAX(pa.approval_level) = ?";
+                $params[] = intval($filters['approval_level']);
             }
             
-                        // Main Query - ดึงข้อมูล PO ที่อนุมัติแล้วพร้อมข้อมูลเพิ่มเติม
+            // ✅ FIX: Main Query with HAVING
             $query = "
                 WITH ApprovedPOs AS (
                     SELECT 
                         pa.po_docno,
-                        MAX(pa.po_amount) as po_amount,
+                        pa.po_amount,
                         MAX(pa.approval_level) as max_approval_level,
-                        MAX(pa.approval_date) as last_approval_date,
                         MAX(pa.customer_name) as customer_name,
                         MAX(pa.item_count) as item_count,
+                        MAX(pa.approval_date) as last_approval_date,
+                        MIN(pa.approval_date) as first_approval_date,
                         COUNT(*) as approval_count,
+                        MAX(pa.approval_note) as last_note,
                         ROW_NUMBER() OVER (ORDER BY MAX(pa.approval_date) DESC, pa.po_docno DESC) as RowNum
                     FROM [Romar128].[dbo].[po_approvals] pa
                     WHERE pa.po_docno LIKE 'PP%' 
                         AND pa.approval_status = 'approved'
                         AND ({$whereConditions})
-                    GROUP BY pa.po_docno
-                    HAVING {$havingConditions}
+                    GROUP BY pa.po_docno, pa.po_amount
+                    {$havingClause}
                 )
                 SELECT 
                     po_docno, po_amount, max_approval_level, 
-                    last_approval_date, customer_name, item_count, approval_count
+                    customer_name, item_count, last_approval_date, 
+                    first_approval_date, approval_count, last_note
                 FROM ApprovedPOs 
                 WHERE RowNum BETWEEN ? AND ?
                 ORDER BY last_approval_date DESC
             ";
             
-            // Count Query - ต้องใช้ subquery เพื่อ count หลังจาก GROUP BY
-            $countQuery = "
-                SELECT COUNT(*) as total
-                FROM (
-                    SELECT pa.po_docno
+            // ✅ FIX: Count Query with same logic
+            if (!empty($filters['approval_level'])) {
+                $countQuery = "
+                    SELECT COUNT(*) as total
+                    FROM (
+                        SELECT pa.po_docno
+                        FROM [Romar128].[dbo].[po_approvals] pa
+                        WHERE pa.po_docno LIKE 'PP%' 
+                            AND pa.approval_status = 'approved'
+                            AND ({$whereConditions})
+                        GROUP BY pa.po_docno
+                        HAVING MAX(pa.approval_level) = ?
+                    ) as grouped_pos
+                ";
+                // ไม่ต้องเพิ่ม approval_level parameter อีกครั้ง เพราะมีอยู่ใน $params แล้ว
+            } else {
+                $countQuery = "
+                    SELECT COUNT(DISTINCT pa.po_docno) as total
                     FROM [Romar128].[dbo].[po_approvals] pa
                     WHERE pa.po_docno LIKE 'PP%' 
                         AND pa.approval_status = 'approved'
                         AND ({$whereConditions})
-                    GROUP BY pa.po_docno
-                    HAVING {$havingConditions}
-                ) as counted
-            ";
+                ";
+            }
             
             // Execute Queries
-            $countParams = array_merge($params, $havingParams);
-            $totalResult = DB::connection('modern')->select($countQuery, $countParams);
+            $totalResult = DB::connection('modern')->select($countQuery, $params);
             $totalRecords = $totalResult[0]->total ?? 0;
             $totalPages = ceil($totalRecords / $limit);
             
             // Execute Main Query
-            $queryParams = array_merge($params, $havingParams, [$offset + 1, $offset + $limit]);
+            $queryParams = array_merge($params, [$offset + 1, $offset + $limit]);
             $approvedPOs = DB::connection('modern')->select($query, $queryParams);
             
             // เพิ่มข้อมูลสถานะ
             foreach ($approvedPOs as $po) {
-                // ข้อมูลมาจากตารางแล้ว ไม่ต้องเพิ่ม default
-                // $po->customer_name = 'N/A'; // มาจากตารางแล้ว
-                // $po->item_count = 0; // มาจากตารางแล้ว
-                
-                // ถ้าไม่มีข้อมูล ให้ใส่ default
+                // Handle null values
                 if (empty($po->customer_name)) {
                     $po->customer_name = 'N/A';
                 }
@@ -627,6 +669,15 @@ class PurchaseOrderController extends Controller
                 
                 // คำนวณ Progress Percentage
                 $po->progress_percentage = ($po->max_approval_level / 3) * 100;
+                
+                // ✅ NEW: Calculate approval duration
+                if ($po->first_approval_date && $po->last_approval_date) {
+                    $firstDate = \Carbon\Carbon::parse($po->first_approval_date);
+                    $lastDate = \Carbon\Carbon::parse($po->last_approval_date);
+                    $po->approval_duration_days = $firstDate->diffInDays($lastDate);
+                } else {
+                    $po->approval_duration_days = 0;
+                }
             }
             
             // Pagination Object
@@ -641,59 +692,31 @@ class PurchaseOrderController extends Controller
                 'previous_page' => $page > 1 ? $page - 1 : null,
             ];
             
+            // ✅ NEW: Date Range Statistics
+            $dateRangeStats = null;
+            if (!empty($filters['date_from']) || !empty($filters['date_to'])) {
+                $dateRangeStats = [
+                    'total_pos' => $totalRecords,
+                    'total_amount' => collect($approvedPOs)->sum('po_amount'),
+                    'avg_amount' => collect($approvedPOs)->avg('po_amount'),
+                    'date_from' => $filters['date_from'],
+                    'date_to' => $filters['date_to'],
+                ];
+            }
+            
             \Log::info('PO Approved Page Accessed:', [
                 'user_id' => $user->id,
                 'filters' => array_filter($filters),
                 'total_records' => $totalRecords,
-                'current_page' => $page
+                'current_page' => $page,
+                'date_range_applied' => !empty($filters['date_from']) || !empty($filters['date_to'])
             ]);
             
-            return view('po.approved', compact('approvedPOs', 'filters', 'pagination'));
+            return view('po.approved', compact('approvedPOs', 'filters', 'pagination', 'dateRangeStats'));
             
         } catch (\Exception $e) {
             \Log::error('Error in PO Approved: ' . $e->getMessage());
             return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * ========== HELPER METHOD: ดึงข้อมูล Customer และ Item Count ==========
-     */
-    private function getCustomerAndItemCount($docNo)
-    {
-        try {
-            // ดึงข้อมูลจาก Legacy Database
-            $query = "
-                SELECT 
-                    s.SUPNAM as customer_name,
-                    COUNT(d.PDTCD) as item_count
-                FROM [Romar1].[dbo].[POC_POH] h
-                JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
-                JOIN [Romar1].[dbo].[POC_POD] d ON h.DOCNO = d.DOCNO
-                WHERE h.DOCNO = ?
-                GROUP BY s.SUPNAM
-            ";
-            
-            $result = DB::connection('legacy')->select($query, [$docNo]);
-            
-            if (!empty($result)) {
-                return [
-                    'customer_name' => $result[0]->customer_name,
-                    'item_count' => $result[0]->item_count
-                ];
-            }
-            
-            return [
-                'customer_name' => null,
-                'item_count' => 0
-            ];
-            
-        } catch (\Exception $e) {
-            \Log::error('Error getting customer and item count: ' . $e->getMessage());
-            return [
-                'customer_name' => null,
-                'item_count' => 0
-            ];
         }
     }
 
