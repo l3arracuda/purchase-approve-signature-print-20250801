@@ -167,7 +167,7 @@
         
         /* Items Table */
         .items-section {
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         
         .section-title {
@@ -232,6 +232,7 @@
         /* Notes Section */
         .notes-section {
             text-align: left;
+            height: 56px;
         }
         
         .notes-section .note-item {
@@ -252,7 +253,7 @@
         /* Approval Section */
         .approval-section {
             margin-right: 80px;
-            padding: 5px;
+            padding: 0px 5px 10px 5px;
         }
         
         .approval-title {

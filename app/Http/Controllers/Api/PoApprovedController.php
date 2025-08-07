@@ -82,7 +82,7 @@ class PoApprovedController extends Controller
         try {
             $user = Auth::user();
             
-            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'
@@ -121,7 +121,7 @@ class PoApprovedController extends Controller
             $user = Auth::user();
             
             // เฉพาะ Manager ขึ้นไป
-            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์ในการ Export ข้อมูล'
@@ -187,7 +187,7 @@ class PoApprovedController extends Controller
         try {
             $user = Auth::user();
             
-            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์ในการ Export ข้อมูล'
@@ -259,7 +259,7 @@ class PoApprovedController extends Controller
         try {
             $user = Auth::user();
             
-            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'
@@ -318,7 +318,7 @@ class PoApprovedController extends Controller
         try {
             $user = Auth::user();
             
-            if (!`$user->isManager() && !`$user->isGM() && !`$user->isAdmin() && !`$user->isUser()) {
+            if (!$user->isManager() && !$user->isGM() && !$user->isAdmin() && !$user->isUser()) {
                 return response()->json([
                     'success' => false,
                     'error' => 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'

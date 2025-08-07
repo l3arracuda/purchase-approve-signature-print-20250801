@@ -69,7 +69,7 @@
                             </li>
                             
                             {{-- ========== NEW: Signature Management Link ========== --}}
-                            <li class="nav-item">
+                            {{-- <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('signature.*') ? 'active' : '' }}" href="{{ route('signature.manage') }}">
                                     <i class="fas fa-signature"></i> 
                                     Digital Signature
@@ -77,7 +77,7 @@
                                         <span class="badge bg-warning text-dark ms-1">!</span>
                                     @endif
                                 </a>
-                            </li>
+                            </li> --}}
                         @endauth
                     </ul>
 

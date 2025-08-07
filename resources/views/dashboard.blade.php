@@ -52,10 +52,14 @@
                             <div class="col-md-3">
                                 <div class="card bg-warning text-white card-hover" 
                                     style="cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease;"
-                                    onclick="window.location.href='{{ route('po.approved') }}'">
+                                    onclick="window.location.href='{{ route('po.approved') }}?approval_level={{ $pendingApprovals['next_level']-1 }}'">
                                     <div class="card-body" style="text-align: center;">
                                         <h5>Pending Level {{ $user->approval_level }}</h5>
+                                        @if(($user->isGM()))
+                                        <h2>{{ $approvedStats->manager_approved ?? 0 }}</h2>
+                                        @elseif(($user->isManager()))
                                         <h2>{{ $approvedStats->user_approved ?? 0 }}</h2>
+                                        @endif
                                         <small>Awaiting Your Approval</small>
                                     </div>                                    
                                 </div>
@@ -352,7 +356,7 @@
                             <div class="card border-info">
                                 <div class="card-header bg-info text-white">
                                     <h6 class="mb-0">
-                                        <i class="fas fa-database"></i> Data Status
+                                        <i class="fas fa-database"></i> Data Status เช็คข้อมูลชื่อลูกค้าและรายการสินค้า
                                         <button type="button" class="btn btn-light btn-sm float-end" id="refreshDataStatusBtn">
                                             <i class="fas fa-refresh"></i> Refresh
                                         </button>

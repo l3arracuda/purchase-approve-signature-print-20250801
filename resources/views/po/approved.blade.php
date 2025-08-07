@@ -186,7 +186,7 @@
                                     <tr>
                                         <th style="width: 50px;">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="select-all" title="Select All">
+                                                <input class="form-check-input" type="checkbox" id="select-all" title="Select All" style="transform: scale(1.5);">
                                                 <label class="form-check-label" for="select-all"></label>
                                             </div>
                                         </th>
@@ -209,7 +209,8 @@
                                                 <input class="form-check-input po-checkbox" 
                                                        type="checkbox" 
                                                        value="{{ $po->po_docno }}" 
-                                                       id="po_{{ $loop->index }}">
+                                                       id="po_{{ $loop->index }}"
+                                                       style="transform: scale(1.5);">
                                                 <label class="form-check-label" for="po_{{ $loop->index }}"></label>
                                             </div>
                                         </td>
