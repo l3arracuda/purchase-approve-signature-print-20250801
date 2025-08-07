@@ -315,7 +315,7 @@
                                     @endif
                                     
                                     {{-- Export Data Button (Manager+ only) --}}
-                                    @if(Auth::user()->approval_level >= 2)
+                                    @if(Auth::user()->isAdmin())
                                         <a href="{{ route('po.print.export', $po->header->DocNo) }}" 
                                         class="btn btn-outline-info btn-sm"
                                         download>

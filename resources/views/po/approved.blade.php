@@ -57,6 +57,11 @@
                                         <input type="number" class="form-control" id="amount_from" name="amount_from" 
                                                value="{{ $filters['amount_from'] ?? '' }}" step="0.01" placeholder="0.00">
                                     </div>
+                                    <div class="col-md-3">
+                                        <label for="amount_to" class="form-label">Amount To</label>
+                                        <input type="number" class="form-control" id="amount_to" name="amount_to" 
+                                            value="{{ $filters['amount_to'] ?? '' }}" step="0.01" placeholder="0.00">
+                                    </div>                                    
                                     <div class="col-md-2">
                                         <label for="approval_level" class="form-label">Approval Level</label>
                                         <select class="form-select" id="approval_level" name="approval_level">
@@ -83,19 +88,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row mt-3">
-                                    <div class="col-md-3">
-                                        <label for="amount_to" class="form-label">Amount To</label>
-                                        <input type="number" class="form-control" id="amount_to" name="amount_to" 
-                                               value="{{ $filters['amount_to'] ?? '' }}" step="0.01" placeholder="0.00">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle"></i> 
-                                            Customer และ Item data จะแสดงจากข้อมูลที่บันทึกไว้ในระบบ
-                                        </small>
-                                    </div>
-                                </div>
                             </form>
                         </div>
                     </div>
@@ -109,7 +101,7 @@
                                         <h4>{{ count($approvedPOs) }}</h4>
                                         <small>POs on this page</small>
                                         @if(isset($pagination))
-                                            <br><small>{{ number_format($pagination->total) }} total</small>
+                                            <small>{{ number_format($pagination->total) }} total</small>
                                         @endif
                                     </div>
                                 </div>
@@ -276,12 +268,12 @@
                                                 </a>
                                                 
                                                 @if(Auth::user()->approval_level >= 1)
-                                                    <a href="{{ route('po.print', $po->po_docno) }}" 
-                                                       target="_blank"
-                                                       class="btn btn-outline-success btn-sm" 
-                                                       title="Print PO">
+                                                    <button type="button" 
+                                                        class="btn btn-outline-success btn-sm"
+                                                        onclick="printInPopup('{{ $po->po_docno }}')"
+                                                        id="printPopupBtn">
                                                         <i class="fas fa-print"></i> Print
-                                                    </a>
+                                                    </button>
                                                 @endif
                                             </div>
                                         </td>
@@ -542,6 +534,18 @@ setInterval(function() {
 
 @push('scripts')
 <script>
+
+    // Print in popup window
+                function printInPopup(docNo) {
+                    const popupUrl = `/po/${docNo}/print/popup`;
+                    const popup = window.open(popupUrl, 'printPO', 'width=1000,height=800,scrollbars=yes,resizable=yes');
+                    
+                    if (popup) {
+                        popup.focus();
+                    } else {
+                        alert('กรุณาอนุญาตให้เว็บไซต์เปิดหน้าต่างใหม่ได้');
+                    }
+                }
 // Test if jQuery is loaded
 if (typeof jQuery === 'undefined') {
     console.error('jQuery is not loaded!');
@@ -628,7 +632,21 @@ $(document).ready(function() {
 
         const notes = $('#bulk-notes').val();
         
-        if (confirm(`คุณต้องการ${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'} ${selectedPOs.length} รายการหรือไม่?`)) {
+        // คำนวณยอดรวมของรายการที่เลือก
+        let totalAmount = 0;
+        $('.po-checkbox:checked').each(function() {
+            const row = $(this).closest('tr');
+            const amountText = row.find('td:nth-child(5)').text().replace(/,/g, '');
+            const amount = parseFloat(amountText) || 0;
+            totalAmount += amount;
+        });
+
+        const formattedAmount = new Intl.NumberFormat('th-TH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(totalAmount);
+
+        if (confirm(`คุณต้องการ${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'} ${selectedPOs.length} รายการ\nยอดรวม: ${formattedAmount} บาทหรือไม่?`)) {
             // Create form with selected POs
             const form = $('<form>', {
                 method: 'POST',
