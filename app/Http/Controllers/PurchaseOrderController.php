@@ -1161,4 +1161,64 @@ class PurchaseOrderController extends Controller
             return back()->withErrors(['error' => 'Error processing approval: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * ดึงข้อมูล Customer และ Item Count สำหรับ PO
+     */
+    private function getCustomerAndItemCount($docNo)
+    {
+        try {
+            // ดึงข้อมูลจาก Legacy Database
+            $result = DB::connection('legacy')->select("
+                SELECT TOP 1
+                    s.SUPNAM as customer_name,
+                    COUNT(DISTINCT d.PDTCD) as item_count
+                FROM [Romar1].[dbo].[POC_POH] h
+                LEFT JOIN [Romar1].[dbo].[APC_SUP] s ON h.SUPCD = s.SUPCD
+                LEFT JOIN [Romar1].[dbo].[POC_POD] d ON h.DOCNO = d.DOCNO
+                WHERE h.DOCNO = ?
+                GROUP BY s.SUPNAM
+            ", [$docNo]);
+
+            if (!empty($result)) {
+                return [
+                    'customer_name' => $result[0]->customer_name ?? 'N/A',
+                    'item_count' => $result[0]->item_count ?? 0,
+                ];
+            }
+
+            // ถ้าไม่เจอข้อมูลใน Legacy DB ให้ค้นหาใน Modern DB
+            $modernResult = DB::connection('modern')->select("
+                SELECT TOP 1
+                    customer_name,
+                    item_count
+                FROM po_approvals
+                WHERE po_docno = ?
+                AND customer_name IS NOT NULL
+                ORDER BY created_at DESC
+            ", [$docNo]);
+
+            if (!empty($modernResult)) {
+                return [
+                    'customer_name' => $modernResult[0]->customer_name ?? 'N/A',
+                    'item_count' => $modernResult[0]->item_count ?? 0,
+                ];
+            }
+
+            // ถ้าไม่เจอเลยให้ return ค่า default
+            return [
+                'customer_name' => 'N/A',
+                'item_count' => 0,
+            ];
+
+        } catch (\Exception $e) {
+            \Log::warning('Error getting customer and item count for PO: ' . $docNo . ' - ' . $e->getMessage());
+            
+            // ในกรณีที่เกิด error ให้ return ค่า default
+            return [
+                'customer_name' => 'N/A',
+                'item_count' => 0,
+            ];
+        }
+    }
 }
